@@ -5,6 +5,12 @@ from pprint import pprint
 
 # EBNF
 
+#   program = statement_list
+#   statement_list = {";"} [ statement { ";" { ";" } statement } ] { ";" }
+#   print_statement = "print" expression
+#   assignment_statement = <identifier> "=" expression
+#   statement = print_statement | assignment_statement
+
 #   expression = term { ("+" | "-") term }
 #   term = factor { ("*" | "/") factor }
 #   factor = <number> | <identifier> | "(" expression ")"
@@ -128,16 +134,86 @@ def test_parse_expression():
     }
     assert tokens == [{"column": 8, "line": 1, "tag": None}]
 
-
-def parse(tokens):
+def parse_print_statement(tokens):
+    # print_statement = "print" expression
+    assert tokens[0]["tag"] == "print", "Expected 'print'"
+    tokens = tokens[1:]
     ast, tokens = parse_expression(tokens)
+    return {
+        "tag": "print",
+        "expression": ast
+    }, tokens
+
+def test_parse_print_statement():
+    print("test parse_print_statement()")
+    tokens = tokenize("print 1")
+    ast, tokens = parse_print_statement(tokens)
+    assert ast == {'tag': 'print', 'expression': {'tag': 'number', 'value': 1}}
+    assert tokens[0]["tag"] is None
+
+    tokens = tokenize("print 1+1*3")
+    ast, tokens = parse_print_statement(tokens)
+    assert tokens[0]["tag"] is None
+
+def parse_assignment_statement(tokens):
+    # assignment_statement = <identifier> "=" expression
+    assert tokens[0]["tag"] == "identifier", "Expected <identifier>"
+    identifier = tokens[0]["value"]
+    tokens = tokens[1:]
+    assert tokens[0]["tag"] == "=", "Expected '=' for assignment"
+    tokens = tokens[1:]
+    ast, tokens = parse_expression(tokens)
+    return {
+        "tag": "assign",
+        "target": identifier,
+        "expression": ast
+    }, tokens
+
+def test_parse_assignment_statement():
+    print("test parse_assignment_statement()")
+    tokens = tokenize("x = 1")
+    ast, tokens = parse_assignment_statement(tokens)
+    assert ast == {'tag': 'assign', 'target': 'x', 'expression': {'tag': 'number', 'value': 1}}
+    assert tokens[0]["tag"] is None
+
+    tokens = tokenize("x = 1+1*3")
+    ast, tokens = parse_assignment_statement(tokens)
+    assert tokens[0]["tag"] is None
+
+def parse_statement(tokens):
+    # statement = print_statement | assignment_statement
+    if tokens[0]["tag"] == "print":
+        return parse_print_statement(tokens)
+    if tokens[0]["tag"] == "identifier":
+        return parse_assignment_statement(tokens)
+
+def test_parse_statement():
+    print("test parse_statement()")
+    tokens = tokenize("x = 1")
+    assert parse_statement(tokens) == parse_assignment_statement(tokens)
+
+    tokens = tokenize("print 1")
+    assert parse_statement(tokens) == parse_print_statement(tokens)
+    
+def parse(tokens):
+    ast, tokens = parse_statement(tokens)
     if tokens[0]["tag"] is not None:
         raise SyntaxError(f"Unexpected token: {tokens[0]}")
     return ast
 
+def parse_statement_list(tokens):
+    # statement_list = {";"} [ statement { ";" { ";" } statement } ] { ";" }
+    {}
+
+def test_parse_statement_list():
+    # WIP
+    {}
 
 if __name__ == "__main__":
     test_parse_factor()
     test_parse_term()
     test_parse_expression()
+    test_parse_print_statement()
+    test_parse_assignment_statement()
+    test_parse_statement()
     print("done.")
