@@ -203,11 +203,125 @@ def parse(tokens):
 
 def parse_statement_list(tokens):
     # statement_list = {";"} [ statement { ";" { ";" } statement } ] { ";" }
-    {}
+    statements = []
+
+    # leading semicolons
+    while tokens[0]["tag"] == ";":
+        tokens = tokens[1:]
+
+    # empty list allowed
+    if tokens[0]["tag"] in [None, "}"]:
+        return statements, tokens
+
+    # first statement
+    statement, tokens = parse_statement(tokens)
+    statements.append(statement)
+
+    while True:
+        # require at least one semicolon to start another statement
+        if tokens[0]["tag"] != ";":
+            break
+
+        # consume one-or-more semicolons
+        while tokens[0]["tag"] == ";":
+            tokens = tokens[1:]
+
+        # trailing semicolons allowed
+        if tokens[0]["tag"] in [None, "}"]:
+            break
+
+        statement, tokens = parse_statement(tokens)
+        statements.append(statement)
+
+    return statements, tokens
 
 def test_parse_statement_list():
-    # WIP
-    {}
+    print("test parse_statement_list()")
+
+    # empty input
+    tokens = tokenize("")
+    statements, rest = parse_statement_list(tokens)
+    assert statements == []
+    assert rest[0]["tag"] is None
+
+    # only semicolons -> empty list
+    tokens = tokenize(";;;")
+    statements, rest = parse_statement_list(tokens)
+    assert statements == []
+    assert rest[0]["tag"] is None
+
+    # single statement, no semicolon
+    tokens = tokenize("x=3")
+    statements, rest = parse_statement_list(tokens)
+    assert len(statements) == 1
+    assert statements[0]["tag"] == "assign"
+    assert statements[0]["target"] == "x"
+    assert rest[0]["tag"] is None
+
+    # single statement, trailing semicolon(s)
+    tokens = tokenize("x=3;")
+    statements, rest = parse_statement_list(tokens)
+    assert len(statements) == 1
+    assert statements[0]["tag"] == "assign"
+    assert rest[0]["tag"] is None
+
+    tokens = tokenize("x=3;;;")
+    statements, rest = parse_statement_list(tokens)
+    assert len(statements) == 1
+    assert statements[0]["tag"] == "assign"
+    assert rest[0]["tag"] is None
+
+    # leading semicolons
+    tokens = tokenize(";;;x=3")
+    statements, rest = parse_statement_list(tokens)
+    assert len(statements) == 1
+    assert statements[0]["tag"] == "assign"
+    assert rest[0]["tag"] is None
+
+    # two statements, single separator
+    tokens = tokenize("x=3;print x")
+    statements, rest = parse_statement_list(tokens)
+    assert len(statements) == 2
+    assert statements[0]["tag"] == "assign"
+    assert statements[1]["tag"] == "print"
+    assert rest[0]["tag"] is None
+
+    # two statements, semicolon runs, plus trailing semicolons
+    tokens = tokenize(";;;x=3;;;print x;;;")
+    statements, rest = parse_statement_list(tokens)
+    assert len(statements) == 2
+    assert statements[0]["tag"] == "assign"
+    assert statements[0]["target"] == "x"
+    assert statements[1]["tag"] == "print"
+    assert rest[0]["tag"] is None
+
+    # missing semicolon between statements: statement_list stops and leaves rest
+    tokens = tokenize("x=3print x")
+    statements, rest = parse_statement_list(tokens)
+    assert len(statements) == 1
+    assert statements[0]["tag"] == "assign"
+    assert rest[0]["tag"] == "print"
+
+    # after a separator run, next token must start a statement
+    try:
+        tokens = tokenize("x=3;;;4")
+        parse_statement_list(tokens)
+    except SyntaxError:
+        pass
+    else:
+        raise Exception("Expected SyntaxError: number cannot start a statement")
+
+    # trailing separators are allowed
+    tokens = tokenize("x=3;;;")
+    statements, rest = parse_statement_list(tokens)
+    assert len(statements) == 1
+    assert rest[0]["tag"] is None
+
+    # When '}' exists in the tokenizer, add:
+    # tokens = tokenize("x=3; print x}")
+    # statements, rest = parse_statement_list(tokens)
+    # assert len(statements) == 2
+    # assert rest[0]["tag"] == "}"
 
 if __name__ == "__main__":
     test_parse_factor()
