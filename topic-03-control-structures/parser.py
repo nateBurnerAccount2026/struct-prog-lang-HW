@@ -334,4 +334,5 @@ if __name__ == "__main__":
     test_parse_print_statement()
     test_parse_assignment_statement()
     test_parse_statement()
+    test_parse_statement_list()
     print("done.")
