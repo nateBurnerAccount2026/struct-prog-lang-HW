@@ -18,6 +18,7 @@ patterns = [
     (r"\(", "("),
     (r"\)", ")"),
     (r"\=", "="),
+    (r"\;", ";"),
     (r"print\b", "print"),
     (r"[a-zA-Z_][\w]*", "identifier"),
     (r".", "error"),

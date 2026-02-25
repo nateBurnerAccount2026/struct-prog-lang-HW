@@ -189,6 +189,7 @@ def parse_statement(tokens):
         return parse_print_statement(tokens)
     if tokens[0]["tag"] == "identifier":
         return parse_assignment_statement(tokens)
+    raise SyntaxError(f"Expected statement, got {tokens[0]}")
 
 def test_parse_statement():
     print("test parse_statement()")
