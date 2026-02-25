@@ -20,12 +20,6 @@ patterns = [
     (r"\=", "="),
     (r"\;", ";"),
     (r"print\b", "print"),
-    (r"if\b", "if"),
-    (r"else\b", "else"),
-    (r"for\b", "for"),
-    (r"assert\b", "assert"),
-    (r"try\b", "try"),
-    (r"catch\b", "catch"),
     (r"[a-zA-Z_][\w]*", "identifier"),
     (r".", "error"),
 ]
@@ -87,17 +81,18 @@ def test_digits():
 
 
 def test_operators():
-    print("test tokenize operators")
-    t = tokenize("+ - * / ( ) = ;")
+    print("test tokenize operators/delimiters")
+    code = "+ - * / ( ) { } = ; < > <= >= == != && || !"
+    t = tokenize(code)
     tags = [tok["tag"] for tok in t]
-    assert tags == ["+", "-", "*", "/", "(", ")", "=", ";", None]
+    assert tags == code.split(" ") + [None]
 
 def test_keywords():
     print("test tokenize keywords")
-    keywords = "print if else for assert try catch"
-    t = tokenize(keywords)
-    tags = [tok["tag"] for tok in t][0:-1]
-    assert " ".join(tags) == keywords
+    code = "print or and not true false"
+    t = tokenize(code)
+    tags = [tok["tag"] for tok in t]
+    assert tags == code.split(" ") + [None]
 
 def test_identifiers():
     print("test tokenize identifiers")
